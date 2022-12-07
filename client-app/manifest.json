@@ -1,0 +1,23 @@
+{
+	"manifest_version": 3,
+	"name": "d-app",
+	"description": "d-app application",
+	"version": "1.0.0.0",
+	"author": "1",
+	"permissions": ["scripting", "tabs", "storage", "activeTab", "declarativeContent"],
+	"host_permissions": [
+		"*://*/*"
+    ],
+	"content_scripts": [
+		{
+			"matches": ["https://online-edu.mirea.ru/mod/quiz/attempt.php*", "http://192.168.1.100:5050/*"],
+			"js": ["content.js"]
+		}
+	],
+	"host_permissions": [
+		"http://192.168.1.100:5050"
+    ],
+	"background": {
+		"service_worker": "background.js"
+	}
+}
