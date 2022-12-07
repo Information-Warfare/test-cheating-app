@@ -23,36 +23,34 @@ class database:
         self.db_id: str = cfg.db_param_id
         self.params: dict = cfg.db_schema
         self.debug: bool = cfg.db_debug
-        match self.db_type:
-            case 'sqlite3':
-                self.connection = sql.connect(os.path.join(cfg.module_dir, f'{cfg.db_sql3_path}'))
-                self.connection.row_factory = sql.Row
-                self.cursor = self.connection.cursor()
-            case 'postgresql':
-                host: str = cfg.db_psql_host
-                port: str = cfg.db_psql_port
-                user: str = cfg.db_psql_user
-                password: str = cfg.db_psql_password
-                dbname: str = cfg.db_psql_dbname
-                self.connection = psycopg2.connect(host=host, port=port, user=user, password=password, database=dbname)
-                self.connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-                self.cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            case _:
-                print('[error] (__init__) database_type does not match existing')
+        if self.db_type == 'sqlite3':
+            self.connection = sql.connect(os.path.join(cfg.module_dir, f'{cfg.db_sql3_path}'))
+            self.connection.row_factory = sql.Row
+            self.cursor = self.connection.cursor()
+        elif self.db_type == 'postgresql':
+            host: str = cfg.db_psql_host
+            port: str = cfg.db_psql_port
+            user: str = cfg.db_psql_user
+            password: str = cfg.db_psql_password
+            dbname: str = cfg.db_psql_dbname
+            self.connection = psycopg2.connect(host=host, port=port, user=user, password=password, database=dbname)
+            self.connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            self.cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        else:
+            print('[error] (__init__) database_type does not match existing')
         self.sql_init() if sql_init is True else None
 
     def sql_init(self) -> None:
-        match self.db_type:
-            case 'sqlite3':
+        if self.db_type == "sqlite3":
                 with open(os.path.join(cfg.module_dir, cfg.db_sql3_init), mode='r', encoding=cfg.db_encode) as file:
                     self.cursor.executescript(file.read())
                 self.connection.commit()
-            case 'postgresql':
+        elif self.db_type == "postgresql":
                 with open(os.path.join(cfg.module_dir, cfg.db_psql_init), mode='r', encoding=cfg.db_encode) as file:
                     self.cursor.execute(file.read())
                 self.connection.commit()
-            case _:
-                print('[error] (sql_init) database_type does not match existing')
+        else:
+            print('[error] (sql_init) database_type does not match existing')
 
     def raw(self, request: str) -> list or bool or None:
         try:
@@ -68,20 +66,6 @@ class database:
     def select(self, table: str, params: str or int or list = None, values: str or int or list = None,
                fields: str or int or list = None, limit: int = None, cut: bool = False, distinct: bool = False,
                order_fields: str or int or list = None, order_type: str = None) -> list or bool or None:
-        """
-        SELECT (**READ**) request.
-
-        :param table: table name.
-        :param params: request parameters.
-        :param values: request values.
-        :param fields: request fields.
-        :param limit: request limit.
-        :param cut: response cut.
-        :param distinct: request distinct.
-        :param order_fields: request order fields.
-        :param order_type: request order type.
-        :return: data from database or bool type if success or error or None if no data.
-        """
         params: list = [params] if isinstance(params, int) or isinstance(params, str) else params
         values: list = [values] if isinstance(values, int) or isinstance(values, str) else values
 
@@ -177,14 +161,6 @@ class database:
         return False
 
     def select_count(self, table: str, params: str or int or list = None, values: str or int or list = None) -> int or bool or None:
-        """
-        SELECT COUNT (**COUNT**) request.
-
-        :param table: table name.
-        :param params: request parameters.
-        :param values: request values.
-        :return:
-        """
         params: list = [params] if isinstance(params, int) or isinstance(params, str) else params
         values: list = [values] if isinstance(values, int) or isinstance(values, str) else values
         p_v: str = 'WHERE ' + ' AND '.join(f"{params[i]}='{values[i]}'" for i in range(0, len(params))) if params and values else ''
@@ -247,18 +223,17 @@ class database:
             param, value = f"{self.db_id}, {param}", f"{_id}', '{value}"
         last_id: int = 0
         try:
-            match self.db_type:
-                case 'sqlite3':
-                    request: str = f"INSERT INTO {table} ({param}) VALUES ('{value}')"
-                    print(f'[debug] (insert) request: {request}') if self.debug else None
-                    self.cursor.execute(request)
-                    last_id: int = self.cursor.lastrowid
-                case 'postgresql':
-                    request: str = f"INSERT INTO {table} ({param}) VALUES ('{value}') RETURNING {self.db_id}"
-                    print(f'[debug] (insert) request: {request}') if self.debug else None
-                    self.cursor.execute(request)
-                    result = self.cursor.fetchone()[self.db_id]
-                    last_id: int = int(result)
+            if self.db_type == "sqlite3":
+                request: str = f"INSERT INTO {table} ({param}) VALUES ('{value}')"
+                print(f'[debug] (insert) request: {request}') if self.debug else None
+                self.cursor.execute(request)
+                last_id: int = self.cursor.lastrowid
+            elif self.db_type == "postgresql":
+                request: str = f"INSERT INTO {table} ({param}) VALUES ('{value}') RETURNING {self.db_id}"
+                print(f'[debug] (insert) request: {request}') if self.debug else None
+                self.cursor.execute(request)
+                result = self.cursor.fetchone()[self.db_id]
+                last_id: int = int(result)
             self.connection.commit()
             return last_id
         except psycopg2.Error or sql.Error as e:
@@ -284,13 +259,12 @@ class database:
         try:
             params: str = self.params[table] if params is None else params
             params: str = ', '.join(f'{i} TEXT' for i in params)
-            match self.db_type:
-                case 'sqlite3':
-                    params = f'{self.db_id} INTEGER NOT NULL UNIQUE, {params}, PRIMARY KEY ({self.db_id} AUTOINCREMENT)'
-                case 'postgresql':
-                    params = f'{self.db_id} INT PRIMARY KEY NOT NULL, {params}'
-                case _:
-                    print('[error] (create_table) database_type does not match existing')
+            if self.db_type == "sqlite3":
+                params = f'{self.db_id} INTEGER NOT NULL UNIQUE, {params}, PRIMARY KEY ({self.db_id} AUTOINCREMENT)'
+            elif self.db_type == "postgresql":
+                params = f'{self.db_id} INT PRIMARY KEY NOT NULL, {params}'
+            else:
+                print('[error] (create_table) database_type does not match existing')
             request: str = f"CREATE TABLE IF NOT EXISTS {table} ({params});"
             print(f'[debug] (create_table) request: {request}') if self.debug else None
             self.cursor.execute(request)
