@@ -100,9 +100,8 @@ info_text.setAttribute('id', '_info_text');
 // request data from the server
 chrome.runtime.sendMessage({
 	contentScriptQuery: "getData",
-	url: "http://" + URL + "/get_answer?question=" + q_text + "&token=" + TOKEN + "&user=" + u_user + "&now=" + q_now
+	url: "http://" + URL + "/get_answer?question=" + q_text + "&token=" + TOKEN + "&user=" + u_user + "&question_num=" + q_now
 }, function (response) {
-	// debugger;
 	if (response != undefined && response != "") {
 		if (DEBUG) console.log("r_answer: " + response);
 		var response = JSON.parse(response);
@@ -159,7 +158,6 @@ chrome.runtime.sendMessage({
 		}
 	} else {
 		answer_text.innerHTML = 'no answer';
-		// debugger;
 	}
 });
 answer_element.appendChild(answer_text);
