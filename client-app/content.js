@@ -13,6 +13,7 @@ String.prototype.hashCode = function() {
 
 const DEBUG = true;
 const TOKEN = 'RTU MIREA';
+const URL = '192.168.1.100:5050'
 
 
 // start message
@@ -37,10 +38,10 @@ if (q_textA_el) {
 	q_text = q_textA_el.innerText
 	q_type = "A"
 } else {	
-	var i = 1;
+	var i = 0;
 	var b = true;
 	[].forEach.call(q_textB_el, function(d) {
-		if (DEBUG) console.log("p (" + i + "): " + d.innerText);
+		if (DEBUG) console.log("p (" + i+1 + "): " + d.innerText);
 		if (b && d.innerText != undefined && d.innerText != "") {
 			q_text = d.innerText;
 			b = !b;
@@ -60,14 +61,13 @@ if (q_type == "A") {
 	if (DEBUG) console.log(q_param);
 	var q_params = q_param.querySelectorAll('div.flex-fill');
 	if (!q_params[0]) {	
-		var i = 1;
+		var i = 0;
 		[].forEach.call(q_params, function(d) {
-			if (DEBUG) console.log("q (" + i + "): " + d.innerText);
+			if (DEBUG) console.log("q (" + i+1 + "): " + d.innerText);
 			i += 1;
 		});
 	}
 }
-
 if (q_type == "B") {
 	var i_param = document.querySelector('div.formulation');
 	var i_params = i_param.querySelectorAll('span.subquestion');
@@ -85,15 +85,22 @@ if (DEBUG) console.log("u_user_hash: " + u_user_hash);
 var answer_element = document.querySelector('div.formulation'); // div.submitbtns | div.formulation | div.answer | div.ablock | (answer)
 var answer_text = document.createElement('p');
 answer_text.innerHTML = "loading?";
-answer_text.setAttribute(
-  'style',
-  'background-color: #def2f8; color: #def2f8;',
-);
+answer_text.setAttribute('style', 'background-color: #def2f8; color: #000; visibility: hidden;');
+answer_text.setAttribute('id', '_answer_element');
+
+
+// create metadata element on site
+var info_element = document.querySelector("div.info");
+var info_text = document.createElement('p');
+info_text.innerHTML = "loading?";
+info_text.setAttribute('style', 'font-size: 8pt; visibility: hidden;');
+info_text.setAttribute('id', '_info_text');
 
 
 // request data from the server
 chrome.runtime.sendMessage({
-	contentScriptQuery: "getData", url: "http://192.168.1.100:5050/get_answer?question=" + q_text + "&token=" + TOKEN + "&user=" + u_user + "&now=" + q_now
+	contentScriptQuery: "getData",
+	url: "http://" + URL + "/get_answer?question=" + q_text + "&token=" + TOKEN + "&user=" + u_user + "&now=" + q_now
 }, function (response) {
 	// debugger;
 	if (response != undefined && response != "") {
@@ -101,6 +108,7 @@ chrome.runtime.sendMessage({
 		var response = JSON.parse(response);
 		if (response.status === "ok") {
 			answer_text.innerHTML = response.answer;
+			info_text.innerHTML = response._id + ", " +response.competence + ", " + response.type;
 			/// RadioButton ///
 			if (response.modification === "rb") {
 				[].forEach.call(q_params, function(d) {
@@ -155,15 +163,29 @@ chrome.runtime.sendMessage({
 	}
 });
 answer_element.appendChild(answer_text);
+info_element.appendChild(info_text);
 
 
 // key event
+var visible = false;
 document.addEventListener("keypress", function(event) {
 	if (event.keyCode == 95) {
 		document.getElementsByName("previous")[0].click();
 	}
 	if (event.keyCode == 43) {
 		document.getElementsByName("next")[0].click()
+	}
+	if (event.keyCode == 92) {
+		visible = !visible;
+		var answer_el = document.querySelector("p#_answer_element");
+		var info_el = document.querySelector("p#_info_text");
+		if (!visible) {
+			answer_el.style.setProperty('visibility', 'hidden');
+			info_el.style.setProperty('visibility', 'hidden');
+		} else {
+			answer_el.style.setProperty('visibility', 'visible');
+			info_el.style.setProperty('visibility', 'visible');
+		}
 	}
 });
 /*
