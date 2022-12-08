@@ -24,17 +24,30 @@ def index():
 
 
 @app.route('/get_answer', methods=['GET'])
-def q():
+def get_answer():
     question = request.args.get('question')
     if not question:
-        return json.dumps({"status": "err#req_arg_get"})
+        return json.dumps({"status": "error#request_argument_get.question"})
+    token = request.args.get('token')
+    if not token:
+        return json.dumps({"status": "error#request_argument_get.token"})
+    user = request.args.get('user')
+    if not user:
+        return json.dumps({"status": "error#request_argument_get.user"})
+    now = request.args.get('now')
+    if not now:
+        return json.dumps({"status": "error#request_argument_get.now"})
+
+    if token != "RTU MIREA":
+        return json.dumps({"status": "error#invalid_token"})
 
     question = question_clear(question)
     response = db.select('answer', 'question', question, limit=1)
     if not response:
-        return json.dumps({"status": "err#resp_empty"})
+        return json.dumps({"status": "error#response_empty"})
+    response = response[0]
 
-    return json.dumps({"status": "ok", "answer": response[0]['answer'], "modification": response[0]['modification']})
+    return json.dumps({"status": "ok", "answer": response['answer'], "modification": response['modification'], "competence": response['competence'], "type": response['type']})
 
 
 if __name__ == '__main__':
