@@ -1,10 +1,12 @@
 import json
+from datetime import datetime
 from flask import Flask, request, g
 from database import database
 from utils import question_clear
 
 DEBUG = True
 PORT = 5050
+TOKEN = "RTU MIREA"
 
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -34,11 +36,11 @@ def get_answer():
     user = request.args.get('user')
     if not user:
         return json.dumps({"status": "error#request_argument_get.user"})
-    now = request.args.get('now')
-    if not now:
-        return json.dumps({"status": "error#request_argument_get.now"})
+    question_num = request.args.get('question_num')
+    if not question_num:
+        return json.dumps({"status": "error#request_argument_get.question_num"})
 
-    if token != "RTU MIREA":
+    if token != TOKEN:
         return json.dumps({"status": "error#invalid_token"})
 
     question = question_clear(question)
@@ -46,8 +48,19 @@ def get_answer():
     if not response:
         return json.dumps({"status": "error#response_empty"})
     response = response[0]
+    _id = response['_id']
+    answer = response['answer']
+    modification = response['modification']
+    competence = response['competence']
+    type = response['type']
 
-    return json.dumps({"status": "ok", "answer": response['answer'], "modification": response['modification'], "competence": response['competence'], "type": response['type']})
+    # telemetry(user, question_num, _id, modification, competence, type)
+
+    return json.dumps({"status": "ok", "_id": _id, "answer": answer, "modification": modification, "competence": competence, "type": type})
+
+
+def telemetry(user: str, question_num: str, question_id: str, modification: str, competence: str, type: str) -> None:
+    db.insert('user', [user, question_num, question_id, modification, competence, type, str(datetime.now())])
 
 
 if __name__ == '__main__':
