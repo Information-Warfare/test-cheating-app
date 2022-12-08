@@ -27,43 +27,44 @@ if (q_now) {
 
 
 // question text
-var q_text = document.querySelectorAll("div.qtext")[0];
-var q_type = "";
-if (q_text) {
-	q_text = q_text.firstChild.nodeValue;
-	q_type = "choice";
-} else {
-	console.log("second_var")
-	
-	q_text = document.querySelector('div.formulation')
-	q_text = q_text.querySelectorAll("p");
-	
+var q_text, q_type;
+var q_text_el = document.querySelector('div.formulation');
+var q_textA_el = q_text_el.querySelectorAll("div.qtext")[0];
+var q_textB_el = q_text_el.querySelectorAll("p");
+
+if (q_textA_el) {
+	q_text = q_textA_el.innerText
+	q_type = "A"
+} else {	
 	var i = 1;
-	[].forEach.call(q_text, function(d) {
-		if (DEBUG) console.log("w (" + i + "): " + d.innerText);
+	var b = true;
+	[].forEach.call(q_textB_el, function(d) {
+		if (DEBUG) console.log("p (" + i + "): " + d.innerText);
+		if (b && d.innerText != undefined && d.innerText != "") {
+			q_text = d.innerText;
+			b = !b;
+		}
 		i += 1;
 	});
-	
-	console.log(q_text);
-	
-	q_type = "detailed";
+	q_type = "B"
 }
+
 if (DEBUG) console.log("q_text: " + q_text);
-if (DEBUG) console.log("q_type: " + q_type)
+if (DEBUG) console.log("q_type: " + q_type);
 
 
 // question answer parameters if question type - choice
-if (q_type == "choice") {
+if (q_type == "A") {
 	var q_param = document.querySelector('div.answer');
 	if (DEBUG) console.log(q_param);
-
 	var q_params = q_param.querySelectorAll('div.flex-fill');
-
-	var i = 1;
-	[].forEach.call(q_params, function(d) {
-		if (DEBUG) console.log("q (" + i + "): " + d.innerText);
-		i += 1;
-	});
+	if (!q_params[0]) {	
+		var i = 1;
+		[].forEach.call(q_params, function(d) {
+			if (DEBUG) console.log("q (" + i + "): " + d.innerText);
+			i += 1;
+		});
+	}
 }
 
 
