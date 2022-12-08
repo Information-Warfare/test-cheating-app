@@ -12,6 +12,7 @@ String.prototype.hashCode = function() {
 
 
 const DEBUG = true;
+const TOKEN = 'RTU MIREA';
 
 
 // start message
@@ -86,13 +87,13 @@ var answer_text = document.createElement('p');
 answer_text.innerHTML = "loading?";
 answer_text.setAttribute(
   'style',
-  'background-color: #def2f8; color: #000;',
+  'background-color: #def2f8; color: #def2f8;',
 );
 
 
 // request data from the server
 chrome.runtime.sendMessage({
-	contentScriptQuery: "getData", url: "http://192.168.1.100:5050/get_answer?question=" + q_text
+	contentScriptQuery: "getData", url: "http://192.168.1.100:5050/get_answer?question=" + q_text + "&token=" + TOKEN + "&user=" + u_user + "&now=" + q_now
 }, function (response) {
 	// debugger;
 	if (response != undefined && response != "") {
@@ -112,12 +113,16 @@ chrome.runtime.sendMessage({
 			/// CheckBox ///
 			if (response.modification === "cb") {
 				var answer = response.answer.split('|');
+				var i = 0;
+				answer_text.innerHTML = "";
 				[].forEach.call(q_params, function(d) {
 					for (const element of answer) {
 						if (element === d.innerText) {
+							answer_text.innerHTML += (i+1 + '. - ' + d.innerText + '<br>');
 							var el = d.parentElement.parentElement.querySelectorAll('input')[1];
 							if (DEBUG) console.log(el);
 							el.checked = true;
+							i += 1;
 						}
 					}
 				});
@@ -126,12 +131,20 @@ chrome.runtime.sendMessage({
 			if (response.modification === "ib") {
 				var answer = response.answer.split('|');
 				var i = 0;
+				answer_text.innerHTML = "";
 				[].forEach.call(i_params, function(d) {
+					answer_text.innerHTML += (i+1 + '. - ' + answer[i] + '<br>');
 					var el = d.querySelector('input');
 					if (DEBUG) console.log(el);
 					el.value = answer[i];
 					i += 1;
 				});
+			}
+			/// TextBox ///
+			if (response.modification === "tb") {
+				var el = q_text_el.querySelector('textarea');
+				if (DEBUG) console.log(el);
+				el.value = response.answer;
 			}
 		} else {
 			answer_text.innerHTML = response.status;
