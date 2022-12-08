@@ -126,9 +126,13 @@ chrome.runtime.sendMessage({
 					for (const element of answer) {
 						if (element === d.innerText) {
 							answer_text.innerHTML += (i+1 + '. - ' + d.innerText + '<br>');
-							var el = d.parentElement.parentElement.querySelectorAll('input')[1];
+							var el = d.parentElement.parentElement.querySelectorAll('input');
 							if (DEBUG) console.log(el);
-							el.checked = true;
+							if (el[1]) {
+								el[1].checked = true;
+							} else {
+								el[0].checked = true;
+							}
 							i += 1;
 						}
 					}
