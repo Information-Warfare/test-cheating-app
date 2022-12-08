@@ -67,6 +67,11 @@ if (q_type == "A") {
 	}
 }
 
+if (q_type == "B") {
+	var i_param = document.querySelector('div.formulation');
+	var i_params = i_param.querySelectorAll('span.subquestion');
+	if (DEBUG) console.log(i_params);
+}
 
 // user information, username and user hash
 var u_user = document.querySelectorAll("span.usertext")[0].firstChild.nodeValue;
@@ -115,6 +120,17 @@ chrome.runtime.sendMessage({
 							el.checked = true;
 						}
 					}
+				});
+			}
+			/// InputBox ///
+			if (response.modification === "ib") {
+				var answer = response.answer.split('|');
+				var i = 0;
+				[].forEach.call(i_params, function(d) {
+					var el = d.querySelector('input');
+					if (DEBUG) console.log(el);
+					el.value = answer[i];
+					i += 1;
 				});
 			}
 		} else {
