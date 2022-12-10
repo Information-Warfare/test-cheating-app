@@ -13,7 +13,7 @@ String.prototype.hashCode = function() {
 
 const DEBUG = true;
 const TOKEN = 'RTU MIREA';
-const URL = '192.168.1.100:5050'
+const URL = '192.168.1.100:5000'
 
 
 // start message
@@ -59,13 +59,18 @@ if (DEBUG) console.log("q_type: " + q_type);
 if (q_type == "A") {
 	var q_param = document.querySelector('div.answer');
 	if (DEBUG) console.log(q_param);
-	var q_params = q_param.querySelectorAll('div.flex-fill');
-	if (!q_params[0]) {	
-		var i = 0;
-		[].forEach.call(q_params, function(d) {
-			if (DEBUG) console.log("q (" + i+1 + "): " + d.innerText);
-			i += 1;
-		});
+	
+	if (q_param) {
+		var q_params = q_param.querySelectorAll('div.flex-fill');
+		if (!q_params[0]) {	
+			var i = 0;
+			[].forEach.call(q_params, function(d) {
+				if (DEBUG) console.log("q (" + i+1 + "): " + d.innerText);
+				i += 1;
+			});
+		}
+	} else {
+		console.log('no q_params type A');
 	}
 }
 if (q_type == "B") {
@@ -97,22 +102,67 @@ info_text.setAttribute('style', 'font-size: 8pt; visibility: hidden;');
 info_text.setAttribute('id', '_info_text');
 
 
-// request data from the server
-chrome.runtime.sendMessage({
-	contentScriptQuery: "getData",
-	url: "http://" + URL + "/get_answer?question=" + q_text + "&token=" + TOKEN + "&user=" + u_user + "&question_num=" + q_now
-}, function (response) {
-	if (response != undefined && response != "") {
-		if (DEBUG) console.log("r_answer: " + response);
-		var response = JSON.parse(response);
-		if (response.status === "ok") {
+answer_element.appendChild(answer_text);
+info_element.appendChild(info_text);
+
+var response;
+
+setTimeout(() => {
+	if (DEBUG) console.log("time"); 
+	// request data from the server
+	chrome.runtime.sendMessage({
+		contentScriptQuery: "getData",
+		url: "http://" + URL + "/get_answer?question=" + q_text + "&token=" + TOKEN + "&user=" + u_user + "&question_num=" + q_now
+	}, function (r) {
+		if (r != undefined && r != "") {
+			if (DEBUG) console.log("r_answer: " + r);
+			response = JSON.parse(r);
+			answer_text.innerHTML = response.answer;
+			info_text.innerHTML = response._id + ", " +response.competence + ", " + response.type;
+		} else {
+			answer_text.innerHTML = 'no answer';
+		}
+	});
+
+}, 5000);
+
+
+
+// key event
+var visible = false;
+document.addEventListener("keypress", function(event) {
+	if (event.keyCode == 95) {
+		document.getElementsByName("previous")[0].click();
+	}
+	if (event.keyCode == 43) {
+		document.getElementsByName("next")[0].click()
+	}
+	if (event.keyCode == 92) {
+		visible = !visible;
+		var answer_el = document.querySelector("p#_answer_element");
+		var info_el = document.querySelector("p#_info_text");
+		var img_el = document.querySelector("img#_img");
+		if (!visible) {
+			if (answer_el) answer_el.style.setProperty('visibility', 'hidden');
+			if (info_el) info_el.style.setProperty('visibility', 'hidden');
+			if (img_el) img_el.style.setProperty('visibility', 'hidden');
+		} else {
+			if (answer_el) answer_el.style.setProperty('visibility', 'visible');
+			if (info_el) info_el.style.setProperty('visibility', 'visible');
+			if (img_el) img_el.style.setProperty('visibility', 'visible');
+		}
+	}
+	if (event.keyCode == 126 || event.keyCode == 1025) {
+		
+		if (response != undefined && response != "" && response.status === "ok") {
 			answer_text.innerHTML = response.answer;
 			info_text.innerHTML = response._id + ", " +response.competence + ", " + response.type;
 			/// RadioButton ///
 			if (response.modification === "rb") {
-				[].forEach.call(q_params, function(d) {
-					if (response.answer === d.innerText) {
+				[].forEach.call(q_params, function(d) {		
+					if (response.answer === d.innerText || response.answer === d.innerText.slice(0, -1)) {
 						var el = d.parentElement.parentElement.querySelector('input');
+						if (DEBUG) console.log(el);
 						el.checked = true;
 					}
 				});
@@ -138,6 +188,13 @@ chrome.runtime.sendMessage({
 					}
 				});
 			}
+			/// WriteBox ///
+			if (response.modification === "wb") {
+				var answer = response.answer;
+				var el = q_text_el.querySelector('span.answer').querySelector('input');
+				if (DEBUG) console.log(el);
+				el.value = response.answer;
+			}
 			/// InputBox ///
 			if (response.modification === "ib") {
 				var answer = response.answer.split('|');
@@ -157,36 +214,36 @@ chrome.runtime.sendMessage({
 				if (DEBUG) console.log(el);
 				el.value = response.answer;
 			}
+			/// MathBox ///
+			if (response.modification === "mb") {
+				var answer = response.answer;
+				[].forEach.call(q_params, function(d) {
+					el = d.querySelector('span.nolink').querySelector('script');
+					if (DEBUG) console.log(el);						
+					if (response.answer === el.innerText || response.answer === el.innerText.slice(0, -2)) {
+						var el = d.parentElement.parentElement.querySelector('input');
+						if (DEBUG) console.log(el);
+						el.checked = true;
+					}
+				});
+			}
+			/// PictureBox ///
+			if (response.modification === "pb") {
+				var answer = response.answer;
+				var img_el = document.createElement('img');
+				img_el.src = response.answer;
+				answer_text.innerHTML = '';
+				img_el.setAttribute('style', 'visibility: hidden;');
+				img_el.setAttribute('id', '_img');
+				answer_element.appendChild(img_el);
+			}
+			
 		} else {
-			answer_text.innerHTML = response.status;
-		}
-	} else {
-		answer_text.innerHTML = 'no answer';
-	}
-});
-answer_element.appendChild(answer_text);
-info_element.appendChild(info_text);
-
-
-// key event
-var visible = false;
-document.addEventListener("keypress", function(event) {
-	if (event.keyCode == 95) {
-		document.getElementsByName("previous")[0].click();
-	}
-	if (event.keyCode == 43) {
-		document.getElementsByName("next")[0].click()
-	}
-	if (event.keyCode == 92) {
-		visible = !visible;
-		var answer_el = document.querySelector("p#_answer_element");
-		var info_el = document.querySelector("p#_info_text");
-		if (!visible) {
-			answer_el.style.setProperty('visibility', 'hidden');
-			info_el.style.setProperty('visibility', 'hidden');
-		} else {
-			answer_el.style.setProperty('visibility', 'visible');
-			info_el.style.setProperty('visibility', 'visible');
+			if (response != undefined && response != "") {
+				answer_text.innerHTML = "loading?";
+			} else {
+				answer_text.innerHTML = response.status;
+			}
 		}
 	}
 });
