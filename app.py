@@ -1,12 +1,13 @@
 import json
 from datetime import datetime
-from flask import Flask, request, g
+
+from flask import Flask, request, g, send_file, send_from_directory
 from database import database
 from utils import question_clear
 
 DEBUG = True
-PORT = 5050
-TOKEN = "RTU MIREA"
+PORT = 5000
+TOKEN = 'RTU MIREA'
 
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -53,8 +54,6 @@ def get_answer():
     modification = response['modification']
     competence = response['competence']
     type = response['type']
-
-    # telemetry(user, question_num, _id, modification, competence, type)
 
     return json.dumps({"status": "ok", "_id": _id, "answer": answer, "modification": modification, "competence": competence, "type": type})
 
