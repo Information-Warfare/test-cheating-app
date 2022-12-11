@@ -10,12 +10,12 @@
     ],
 	"content_scripts": [
 		{
-			"matches": ["https://online-edu.mirea.ru/mod/quiz/attempt.php*", "http://192.168.1.100:5000/*"],
+			"matches": ["https://online-edu.mirea.ru/mod/quiz/attempt.php*", "http://185.105.91.36/*"],
 			"js": ["content.js"]
 		}
 	],
 	"host_permissions": [
-		"http://192.168.1.100:5000"
+		"http://185.105.91.36"
     ],
 	"background": {
 		"service_worker": "background.js"

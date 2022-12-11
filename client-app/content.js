@@ -1,9 +1,8 @@
-const DEBUG = true;
+const DEBUG = false;
 const TOKEN = 'RTU MIREA';
-const URL = '192.168.1.100:5000';
+const URL = '185.105.91.36';
 
 
-// question number
 var q_now = document.querySelectorAll("span.qno")[0];
 if (q_now) {
 	q_now = q_now.firstChild.nodeValue;
@@ -11,7 +10,6 @@ if (q_now) {
 }
 
 
-// question text
 var q_text, q_type;
 var q_text_el = document.querySelector('div.formulation');
 var q_textA_el = q_text_el.querySelectorAll("div.qtext")[0];
@@ -38,7 +36,6 @@ if (DEBUG) console.log("q_text: " + q_text);
 if (DEBUG) console.log("q_type: " + q_type);
 
 
-// question answer parameters if question type - choice
 if (q_type == "A") {
 	var q_param = document.querySelector('div.answer');
 	if (DEBUG) console.log(q_param);
@@ -63,7 +60,6 @@ if (q_type == "B") {
 }
 
 
-// create answer element on site
 var answer_element = document.querySelector('div.formulation'); // div.submitbtns | div.formulation | div.answer | div.ablock | (answer)
 var answer_text = document.createElement('p');
 answer_text.innerHTML = "loading?";
@@ -71,7 +67,6 @@ answer_text.setAttribute('style', 'background-color: #def2f8; color: #000; visib
 answer_text.setAttribute('id', '_answer_element');
 
 
-// create metadata element on site
 var info_element = document.querySelector("div.info");
 var info_text = document.createElement('p');
 info_text.innerHTML = "loading?";
@@ -90,7 +85,6 @@ if (q_text.includes('Хотя в то время в городе войск бы
 
 setTimeout(() => {
 	if (DEBUG) console.log("time");
-	// request data from the server
 	chrome.runtime.sendMessage({
 		contentScriptQuery: "getData",
 		url: "http://" + URL + "/get_answer?question=" + q_text + "&token=" + TOKEN
@@ -113,10 +107,7 @@ setTimeout(() => {
 			answer_text.innerHTML = 'no answer';
 		}
 	});
-}, 1);
-
-
-// key event
+}, 5000);
 var visible = false;
 document.addEventListener("keypress", function(event) {
 	if (event.keyCode == 95) {
@@ -145,7 +136,6 @@ document.addEventListener("keypress", function(event) {
 		if (response != undefined && response != "" && response.status === "ok") {
 			answer_text.innerHTML = response.answer;
 			info_text.innerHTML = response._id;
-			/// RadioButton ///
 			if (response.modification === "rb") {
 				[].forEach.call(q_params, function(d) {
 					if (response.answer === d.innerText || response.answer === d.innerText.slice(0, -1)) {
@@ -155,7 +145,6 @@ document.addEventListener("keypress", function(event) {
 					}
 				});
 			}
-			/// CheckBox ///
 			if (response.modification === "cb") {
 				var answer = response.answer.split('|');
 				var i = 0;
@@ -176,14 +165,12 @@ document.addEventListener("keypress", function(event) {
 					}
 				});
 			}
-			/// WriteBox ///
 			if (response.modification === "wb") {
 				var answer = response.answer;
 				var el = q_text_el.querySelector('span.answer').querySelector('input');
 				if (DEBUG) console.log(el);
 				el.value = response.answer;
 			}
-			/// InputBox ///
 			if (response.modification === "ib") {
 				var answer = response.answer.split('|');
 				var i = 0;
@@ -196,13 +183,11 @@ document.addEventListener("keypress", function(event) {
 					i += 1;
 				});
 			}
-			/// TextBox ///
 			if (response.modification === "tb") {
 				var el = q_text_el.querySelector('textarea');
 				if (DEBUG) console.log(el);
 				el.value = response.answer;
 			}
-			/// MathBox ///
 			if (response.modification === "mb") {
 				var answer = response.answer;
 				[].forEach.call(q_params, function(d) {
@@ -215,7 +200,6 @@ document.addEventListener("keypress", function(event) {
 					}
 				});
 			}
-			/// PictureBox ///
 			if (response.modification === "pb") {
 				var answer = response.answer;
 				var img_el = document.createElement('img');
@@ -225,7 +209,6 @@ document.addEventListener("keypress", function(event) {
 				img_el.setAttribute('id', '_img');
 				answer_element.appendChild(img_el);
 			}
-			/// VariantBox ///
 			if (response.modification === "vb") {
 				answer_text.innerHTML = "";
 				var answer = response.answer.split('|');
@@ -244,9 +227,3 @@ document.addEventListener("keypress", function(event) {
 		}
 	}
 });
-/*
-document.onkeypress = function (e) {
-    e = e || window.event;
-    alert(e.keyCode);
-};
-*/
