@@ -1,23 +1,6 @@
-// hash function
-String.prototype.hashCode = function() {
-  var hash = 0, i, chr;
-  if (this.length === 0) return hash;
-  for (i = 0; i < this.length; i++) {
-    chr = this.charCodeAt(i);
-    hash = ((hash << 5) - hash) + chr;
-    hash |= 0; // convert to 32bit integer
-  }
-  return hash;
-}
-
-
 const DEBUG = true;
 const TOKEN = 'RTU MIREA';
-const URL = '192.168.1.100:5000'
-
-
-// start message
-if (DEBUG) console.log("Ничто не вечно, вечен РТУ МИРЭА!")
+const URL = '192.168.1.100:5000';
 
 
 // question number
@@ -35,20 +18,20 @@ var q_textA_el = q_text_el.querySelectorAll("div.qtext")[0];
 var q_textB_el = q_text_el.querySelectorAll("p");
 
 if (q_textA_el) {
-	q_text = q_textA_el.innerText
-	q_type = "A"
-} else {	
+	q_text = q_textA_el.innerText;
+	q_type = "A";
+} else {
 	var i = 0;
 	var b = true;
 	[].forEach.call(q_textB_el, function(d) {
-		if (DEBUG) console.log("p (" + i+1 + "): " + d.innerText);
+		if (DEBUG) console.log("p (" + i + 1 + "): " + d.innerText);
 		if (b && d.innerText != undefined && d.innerText != "") {
 			q_text = d.innerText;
 			b = !b;
 		}
 		i += 1;
 	});
-	q_type = "B"
+	q_type = "B";
 }
 
 if (DEBUG) console.log("q_text: " + q_text);
@@ -59,13 +42,13 @@ if (DEBUG) console.log("q_type: " + q_type);
 if (q_type == "A") {
 	var q_param = document.querySelector('div.answer');
 	if (DEBUG) console.log(q_param);
-	
+
 	if (q_param) {
 		var q_params = q_param.querySelectorAll('div.flex-fill');
-		if (!q_params[0]) {	
+		if (!q_params[0]) {
 			var i = 0;
 			[].forEach.call(q_params, function(d) {
-				if (DEBUG) console.log("q (" + i+1 + "): " + d.innerText);
+				if (DEBUG) console.log("q (" + i + 1 + "): " + d.innerText);
 				i += 1;
 			});
 		}
@@ -78,12 +61,6 @@ if (q_type == "B") {
 	var i_params = i_param.querySelectorAll('span.subquestion');
 	if (DEBUG) console.log(i_params);
 }
-
-// user information, username and user hash
-var u_user = document.querySelectorAll("span.usertext")[0].firstChild.nodeValue;
-var u_user_hash = u_user.hashCode()
-if (DEBUG) console.log("u_user: " + u_user);
-if (DEBUG) console.log("u_user_hash: " + u_user_hash);
 
 
 // create answer element on site
@@ -107,25 +84,36 @@ info_element.appendChild(info_text);
 
 var response;
 
+if (q_text.includes('Хотя в то время в городе войск было мало, и город не был готов к обороне, но среди <них> находились испытанные')) {
+	answer_text.innerHTML = "Крымская война";
+}
+
 setTimeout(() => {
-	if (DEBUG) console.log("time"); 
+	if (DEBUG) console.log("time");
 	// request data from the server
 	chrome.runtime.sendMessage({
 		contentScriptQuery: "getData",
-		url: "http://" + URL + "/get_answer?question=" + q_text + "&token=" + TOKEN + "&user=" + u_user + "&question_num=" + q_now
-	}, function (r) {
+		url: "http://" + URL + "/get_answer?question=" + q_text + "&token=" + TOKEN
+	}, function(r) {
 		if (r != undefined && r != "") {
 			if (DEBUG) console.log("r_answer: " + r);
 			response = JSON.parse(r);
 			answer_text.innerHTML = response.answer;
-			info_text.innerHTML = response._id + ", " +response.competence + ", " + response.type;
+			info_text.innerHTML = response._id;
+			if (response.modification === "pb") {
+				var answer = response.answer;
+				var img_el = document.createElement('img');
+				img_el.src = response.answer;
+				answer_text.innerHTML = '';
+				img_el.setAttribute('style', 'visibility: hidden;');
+				img_el.setAttribute('id', '_img');
+				answer_element.appendChild(img_el);
+			}
 		} else {
 			answer_text.innerHTML = 'no answer';
 		}
 	});
-
-}, 5000);
-
+}, 1);
 
 
 // key event
@@ -135,7 +123,7 @@ document.addEventListener("keypress", function(event) {
 		document.getElementsByName("previous")[0].click();
 	}
 	if (event.keyCode == 43) {
-		document.getElementsByName("next")[0].click()
+		document.getElementsByName("next")[0].click();
 	}
 	if (event.keyCode == 92) {
 		visible = !visible;
@@ -153,13 +141,13 @@ document.addEventListener("keypress", function(event) {
 		}
 	}
 	if (event.keyCode == 126 || event.keyCode == 1025) {
-		
+
 		if (response != undefined && response != "" && response.status === "ok") {
 			answer_text.innerHTML = response.answer;
-			info_text.innerHTML = response._id + ", " +response.competence + ", " + response.type;
+			info_text.innerHTML = response._id;
 			/// RadioButton ///
 			if (response.modification === "rb") {
-				[].forEach.call(q_params, function(d) {		
+				[].forEach.call(q_params, function(d) {
 					if (response.answer === d.innerText || response.answer === d.innerText.slice(0, -1)) {
 						var el = d.parentElement.parentElement.querySelector('input');
 						if (DEBUG) console.log(el);
@@ -175,7 +163,7 @@ document.addEventListener("keypress", function(event) {
 				[].forEach.call(q_params, function(d) {
 					for (const element of answer) {
 						if (element === d.innerText) {
-							answer_text.innerHTML += (i+1 + '. - ' + d.innerText + '<br>');
+							answer_text.innerHTML += (i + 1 + '. - ' + d.innerText + '<br>');
 							var el = d.parentElement.parentElement.querySelectorAll('input');
 							if (DEBUG) console.log(el);
 							if (el[1]) {
@@ -201,7 +189,7 @@ document.addEventListener("keypress", function(event) {
 				var i = 0;
 				answer_text.innerHTML = "";
 				[].forEach.call(i_params, function(d) {
-					answer_text.innerHTML += (i+1 + '. - ' + answer[i] + '<br>');
+					answer_text.innerHTML += (i + 1 + '. - ' + answer[i] + '<br>');
 					var el = d.querySelector('input');
 					if (DEBUG) console.log(el);
 					el.value = answer[i];
@@ -219,7 +207,7 @@ document.addEventListener("keypress", function(event) {
 				var answer = response.answer;
 				[].forEach.call(q_params, function(d) {
 					el = d.querySelector('span.nolink').querySelector('script');
-					if (DEBUG) console.log(el);						
+					if (DEBUG) console.log(el);
 					if (response.answer === el.innerText || response.answer === el.innerText.slice(0, -2)) {
 						var el = d.parentElement.parentElement.querySelector('input');
 						if (DEBUG) console.log(el);
@@ -237,7 +225,16 @@ document.addEventListener("keypress", function(event) {
 				img_el.setAttribute('id', '_img');
 				answer_element.appendChild(img_el);
 			}
-			
+			/// VariantBox ///
+			if (response.modification === "vb") {
+				answer_text.innerHTML = "";
+				var answer = response.answer.split('|');
+				var i = 0;
+				for (const element of answer) {
+					answer_text.innerHTML += (i + 1 + '. - ' + element + '<br>');
+					i += 1;
+				}
+			}
 		} else {
 			if (response != undefined && response != "") {
 				answer_text.innerHTML = "loading?";
