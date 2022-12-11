@@ -15,7 +15,8 @@ class config:
         self.db_type: str = str(self.config['db']['type'])
         self.db_encode: str = str(self.config['db']['encode']).lower()
         self.db_param_id: str = str(self.config['db']['param_id'])
-        self.db_debug: bool = self.bool(str(self.config['db']['debug']))
+        self.db_debug: bool = bool(self.config['db']['debug'])
+        self.db_schema: dict = ast.literal_eval(str(self.config['db']['schema']))
 
         self.db_sql3_path: str = str(self.config['db_sql3']['path'])
         self.db_sql3_init: str = str(self.config['db_sql3']['init'])
@@ -26,9 +27,6 @@ class config:
         self.db_psql_password: str = str(self.config['db_psql']['password'])
         self.db_psql_dbname: str = str(self.config['db_psql']['dbname'])
         self.db_psql_init: str = str(self.config['db_psql']['init'])
-
-    def bool(self, b):
-        return b.lower() in ['true', '1', 't', 'y', 'yes']
 
     def update(self, section: str, option: str, value: str):
         self.config.set(section, option, value)
