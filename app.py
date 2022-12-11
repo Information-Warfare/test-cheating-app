@@ -34,12 +34,6 @@ def get_answer():
     token = request.args.get('token')
     if not token:
         return json.dumps({"status": "error#request_argument_get.token"})
-    user = request.args.get('user')
-    if not user:
-        return json.dumps({"status": "error#request_argument_get.user"})
-    question_num = request.args.get('question_num')
-    if not question_num:
-        return json.dumps({"status": "error#request_argument_get.question_num"})
 
     if token != TOKEN:
         return json.dumps({"status": "error#invalid_token"})
@@ -52,14 +46,8 @@ def get_answer():
     _id = response['_id']
     answer = response['answer']
     modification = response['modification']
-    competence = response['competence']
-    type = response['type']
 
-    return json.dumps({"status": "ok", "_id": _id, "answer": answer, "modification": modification, "competence": competence, "type": type})
-
-
-def telemetry(user: str, question_num: str, question_id: str, modification: str, competence: str, type: str) -> None:
-    db.insert('user', [user, question_num, question_id, modification, competence, type, str(datetime.now())])
+    return json.dumps({"status": "ok", "_id": _id, "answer": answer, "modification": modification})
 
 
 if __name__ == '__main__':
