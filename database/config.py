@@ -16,7 +16,6 @@ class config:
         self.db_encode: str = str(self.config['db']['encode']).lower()
         self.db_param_id: str = str(self.config['db']['param_id'])
         self.db_debug: bool = self.bool(str(self.config['db']['debug']))
-        self.db_schema: dict = ast.literal_eval(str(self.config['db']['schema']))
 
         self.db_sql3_path: str = str(self.config['db_sql3']['path'])
         self.db_sql3_init: str = str(self.config['db_sql3']['init'])
